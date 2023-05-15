@@ -5,53 +5,58 @@ import { toast } from 'react-hot-toast';
 import { useAuth } from '../hooks';
 
 export const Login: FC = () => {
-  const { setAuth, auth } = useAuth();
+  const { setAuth } = useAuth();
+  const [loading, setLoading] = useState<boolean>(false);
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    toast.promise(
-      axios.post(
-        '/auth/login',
-        {
-          username,
-          password,
-        },
-        {
-          withCredentials: true,
-        }
-      ),
-      {
-        loading: 'Loading...',
-        success: (res) => {
-          const { data } = res.data;
-          setAuth({
-            accessToken: data.accessToken,
-            user: data.user,
-          });
-          return 'Login Successfully';
-        },
-        error: (err) => {
-          let msg = 'Something went wrong';
-          if (err instanceof AxiosError) {
-            const code: string = err.response?.data.error.code;
-
-            const codes: { [key: string]: string } = {
-              'auth/username-not-found': 'Invalid username',
-              'auth/invalid-password': 'Invalid password',
-            };
-
-            msg = codes[code] ?? msg;
-
-            console.log(err.response?.data);
+    toast
+      .promise(
+        axios.post(
+          '/auth/login',
+          {
+            username,
+            password,
+          },
+          {
+            withCredentials: true,
           }
+        ),
+        {
+          loading: 'Loading...',
+          success: (res) => {
+            const { data } = res.data;
+            setAuth({
+              accessToken: data.accessToken,
+              user: data.user,
+            });
+            return 'Login Successfully';
+          },
+          error: (err) => {
+            let msg = 'Something went wrong';
+            if (err instanceof AxiosError) {
+              const code: string = err.response?.data.error.code;
 
-          return msg;
-        },
-      }
-    );
+              const codes: { [key: string]: string } = {
+                'auth/username-not-found': 'Invalid username',
+                'auth/invalid-password': 'Invalid password',
+              };
+
+              msg = codes[code] ?? msg;
+
+              console.log(err.response?.data);
+            }
+
+            return msg;
+          },
+        }
+      )
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
@@ -96,7 +101,11 @@ export const Login: FC = () => {
             />
           </div>
 
-          <button className="btn-primary btn" type="submit">
+          <button
+            className={`btn-primary btn ${loading ? 'loading' : ''}`}
+            type="submit"
+            disabled={loading}
+          >
             Login
           </button>
         </form>
