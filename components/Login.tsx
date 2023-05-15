@@ -12,7 +12,7 @@ export const Login: FC = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+    setLoading(true);
     toast
       .promise(
         axios.post(
