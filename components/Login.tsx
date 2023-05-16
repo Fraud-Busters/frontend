@@ -3,6 +3,7 @@ import axios from '../api/axios';
 import { AxiosError } from 'axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../hooks';
+import { SEO } from '../lib/seo';
 
 export const Login: FC = () => {
   const { setAuth } = useAuth();
@@ -61,6 +62,8 @@ export const Login: FC = () => {
 
   return (
     <div className="flex w-full min-h-screen flex-col justify-center items-center">
+      <SEO title="Login" />
+
       <header>
         <h1 className="text-4xl text-center">Welcome to Fraud Busters!</h1>
         <h2 className="text-center text-2xl mt-5">Login</h2>
@@ -83,6 +86,7 @@ export const Login: FC = () => {
               name="username"
               autoComplete="on"
               onChange={(e) => setUsername(e.target.value)}
+              required
             />
           </div>
 
@@ -98,6 +102,7 @@ export const Login: FC = () => {
               name="password"
               autoComplete="on"
               onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </div>
 
