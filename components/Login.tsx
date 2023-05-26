@@ -80,7 +80,7 @@ export const Login: FC = () => {
             </label>
             <input
               type="text"
-              placeholder="DharmaIsOP"
+              placeholder="FraudBuster"
               className="input input-bordered w-full input-primary"
               id="username"
               name="username"
@@ -96,7 +96,7 @@ export const Login: FC = () => {
             </label>
             <input
               type="password"
-              placeholder="DharmaIsOP"
+              placeholder="**********"
               className="input input-bordered w-full input-primary"
               id="password"
               name="password"

@@ -22,7 +22,7 @@ export const PersistLogin: FC<{
       }
     };
 
-    // persist added here AFTER tutorial video
+    
     // Avoids unwanted call to verifyRefreshToken
     !auth?.accessToken ? verifyRefreshToken() : setIsLoading(false);
 
