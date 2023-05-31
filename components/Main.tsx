@@ -1,186 +1,164 @@
-import {
-  Dispatch,
-  FC,
-  SetStateAction,
-  useCallback,
-  useMemo,
-  useState,
-} from 'react';
-import { useLogout } from '../hooks';
-import { toast } from 'react-hot-toast';
-import { useDropzone } from 'react-dropzone';
-import { AiOutlineCloseCircle } from 'react-icons/ai';
+import { FC, useEffect, useState } from 'react';
+import { Navbar } from './Navbar';
+import { CSVDataPreview } from './CSVDataPreview';
+import { UploadCSV } from './UploadCSV';
+import useAxiosPrivate from '../hooks/useAxiosPrivate';
+import { Prediction } from '../interfaces';
 
-export const UploadCSV: FC<{
-  setCsvData: Dispatch<SetStateAction<string[][]>>;
-  setCsvFile: Dispatch<SetStateAction<File | null>>;
-  csvFile: File | null;
-}> = ({ setCsvData, csvFile, setCsvFile }) => {
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      // Do something with the files
-      const file = acceptedFiles[0];
-
-      const reader = new FileReader();
-
-      reader.onload = (e) => {
-        const text = e.target?.result;
-        if (typeof text === 'string') {
-          let rows = text.split('\n');
-          rows = rows.filter((row) => row !== '');
-          const data = rows.map((row) => row.split(','));
-          setCsvData(data);
-          setCsvFile(file);
-        }
-      };
-
-      reader.readAsText(file);
-    },
-    [setCsvData, setCsvFile]
-  );
-
-  const removeFile = () => {
-    setCsvData([]);
-    setCsvFile(null);
-  };
-
-  const { getRootProps, getInputProps, isFocused, isDragAccept, isDragReject } =
-    useDropzone({
-      onDrop,
-      accept: {
-        'text/csv': ['.csv'],
-      },
-      maxFiles: 1,
-    });
-
-  const borderColor = useMemo(() => {
-    if (isDragAccept) {
-      return '#00e676';
-    }
-
-    if (isDragReject) {
-      return '#ff1744';
-    }
-
-    if (isFocused) {
-      return '#2196f3';
-    }
-
-    return '#eeeeee';
-  }, [isDragAccept, isDragReject, isFocused]);
-
-  return (
-    <>
-      <section className="flex flex-col justify-center items-center w-3/4 md:w-[480px]">
-        <div
-          {...getRootProps({
-            style: {
-              borderColor,
-            },
-          })}
-          className={`border-2 relative rounded-sm border-dashed p-6 cursor-pointer w-full md:h-20 flex flex-col justify-center items-center text-center`}
-        >
-          <input {...getInputProps()} />
-          <p>
-            {csvFile
-              ? `
-                ${csvFile.name} - ${csvFile.size} bytes
-              `
-              : 'Drag and drop some your csv file here, or click to select files'}
-          </p>
-
-          {csvFile && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                removeFile();
-              }}
-              className="absolute top-0 right-0 p-1 cursor-pointer hover:bg-gray-200 rounded-full transition duration-300 ease-in-out"
-            >
-              <AiOutlineCloseCircle size={20} />
-            </button>
-          )}
-        </div>
-        <button
-          disabled={!csvFile}
-          className="btn btn-primary mt-5 px-10 w-full"
-        >
-          Predict
-        </button>
-      </section>
-    </>
-  );
+export const BADGE_COLOR: { [key: string]: string } = {
+  COMPLETED: 'badge-success',
+  PROCESSING: 'badge-warning',
+  FAILED_TO_UPLOAD: 'badge-error',
+  FAILED_TO_PROCESS: 'badge-error',
+  PENDING: 'badge-primary',
+  UPLOADED: 'badge-secondary',
 };
 
-const CSVDataPreview: FC<{ csvData: string[][] }> = ({ csvData }) => {
-  const displayedData = useMemo(() => csvData.slice(0, 10), [csvData]);
-  const isEmpty = !displayedData.length;
+export const STATUS_MAP: { [key: string]: string } = {
+  COMPLETED: 'Completed',
+  PROCESSING: 'Processing',
+  FAILED_TO_UPLOAD: 'Failed to Upload',
+  FAILED_TO_PROCESS: 'Failed to Process',
+  PENDING: 'Pending',
+  UPLOADED: 'Uploaded',
+};
+
+export const UploadHistory: FC = () => {
+  const [data, setData] = useState<Prediction[]>([]);
+  const [deleteId, setDeleteId] = useState('');
+  const [isFetching, setIsFetching] = useState(false);
+  const api = useAxiosPrivate();
+
+  const onDelete = async (id: string) => {
+    try {
+      setDeleteId(id);
+      await api.delete(`/predictions/${id}`);
+      setData(data.filter((item) => item.id !== id));
+    } catch (err) {
+    } finally {
+      setDeleteId('');
+    }
+  };
+
+  const getData = async () => {
+    try {
+      setIsFetching(true);
+      const { data } = await api.get('/predictions');
+      const histories = data.data;
+
+      setData(histories);
+    } catch (err) {
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  const download = async (id: string, realFilename: string) => {
+    const res = await api.get(`/download/${id}`, { responseType: 'blob' });
+    const filename = `result_${realFilename}`;
+
+    const href = window.URL.createObjectURL(res.data);
+
+    // create "a" HTML element with href to file & click
+    const link = document.createElement('a');
+    link.href = href;
+    link.setAttribute('download', filename); //or any other extension
+    document.body.appendChild(link);
+    link.click();
+
+    // clean up "a" element & remove ObjectURL
+    document.body.removeChild(link);
+    URL.revokeObjectURL(href);
+  };
+
+  useEffect(() => {
+    getData();
+  }, []);
+
   return (
     <>
-      <div className="overflow-x-auto">
-        {isEmpty && (
-          <p className="text-center text-gray-500">No data to display</p>
-        )}
-        {!isEmpty && (
-          <table className="table table-compact w-full">
-            <tbody>
-              {displayedData.map((row, index) => {
-                row = [String(index + 1), ...row];
-                return (
-                  <tr key={index}>
-                    {row.map((cell, index) => {
-                      return <td key={index}>{cell}</td>;
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
+      <div className="flex w-full mb-2">
+        <button
+          className={`btn btn-info ${isFetching ? 'loading' : ''}`}
+          onClick={getData}
+        >
+          Refresh
+        </button>
+      </div>
+      <div className="overflow-x-auto w-full">
+        <table className="table w-full">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>File Name</th>
+              <th>Uploaded At</th>
+              <th>Status</th>
+              <th>Result</th>
+              <th>Delete</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {data.map((history, idx) => {
+              const formattedDate = new Date(history.createdAt).toLocaleString(
+                'en-US',
+                {
+                  timeStyle: 'short',
+                  dateStyle: 'long',
+                }
+              );
+              const no = idx + 1;
+              const hasResult = !!history.outKey;
+              const status = STATUS_MAP[history.status];
+              const badgeColor = BADGE_COLOR[history.status];
+              const isDeleting = history.id === deleteId;
+
+              return (
+                <tr key={history.id} className="hover">
+                  <td>{no}</td>
+                  <td>{history.filename}</td>
+                  <td>{formattedDate}</td>
+                  <td>
+                    <span className={`badge ${badgeColor}`}>{status}</span>
+                  </td>
+                  <td>
+                    <button
+                      className={`
+                    btn btn-accent
+                    ${hasResult ? '' : 'btn-disabled cursor-not-allowed'}
+                  `}
+                      onClick={() => download(history.id, history.filename)}
+                    >
+                      {hasResult ? 'Download' : 'Processing'}
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      onClick={() => onDelete(history.id)}
+                      className={`btn btn-error ${isDeleting ? 'loading' : ''}`}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </>
   );
 };
 
 export const Main: FC = () => {
-  const logout = useLogout();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [csvData, setCsvData] = useState<string[][]>([]);
   const [isUploadActive, setIsUploadActive] = useState(true);
   const [csvFile, setCsvFile] = useState<File | null>(null);
 
   return (
     <>
-      <nav className="px-10 h-16 top-0 py-10 left-0 w-full">
-        <ul className="flex justify-between h-full items-center">
-          <li>FB</li>
-          <li>
-            <button
-              className={`btn btn-accent ${
-                isLoggingOut ? 'btn-disabled cursor-not-allowed' : ''
-              }`}
-              disabled={isLoggingOut}
-              onClick={() => {
-                setIsLoggingOut(true);
-                toast
-                  .promise(logout(), {
-                    loading: 'Logging out...',
-                    success: 'Logged out successfully',
-                    error: 'Logging out failed',
-                  })
-                  .finally(() => {
-                    setIsLoggingOut(false);
-                  });
-              }}
-            >
-              Logout
-            </button>
-          </li>
-        </ul>
-      </nav>
-      {/* <main className="flex w-full min-h-screen flex-col justify-center items-center"> */}
-      <main className="w-full h-full flex flex-col items-center mt-32 flex-1">
-        {/* <div className="tabs mb-5 absolute top-56 left-1/2 transform -translate-x-1/2 -translate-y-1/2"> */}
+      <Navbar />
+      <main className="w-full h-full flex flex-col items-center mt-32 flex-1 sm:px-10 px-5 pb-5">
         <div className="tabs mb-5">
           <a
             className={`
@@ -196,18 +174,22 @@ export const Main: FC = () => {
           `}
             onClick={() => setIsUploadActive(false)}
           >
-            Preview Data
+            History
           </a>
         </div>
-        <section className="flex w-full h-full flex-col items-center mt-5 overflow-x-auto">
+        <section className="flex w-full h-full flex-col items-center mt-5">
           {isUploadActive && (
-            <UploadCSV
-              setCsvData={setCsvData}
-              setCsvFile={setCsvFile}
-              csvFile={csvFile}
-            />
+            <>
+              <UploadCSV
+                setCsvData={setCsvData}
+                setCsvFile={setCsvFile}
+                csvFile={csvFile}
+              />
+              <CSVDataPreview csvData={csvData} />
+            </>
           )}
-          {!isUploadActive && <CSVDataPreview csvData={csvData} />}
+
+          {!isUploadActive && <UploadHistory />}
         </section>
       </main>
     </>
