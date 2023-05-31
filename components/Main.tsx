@@ -113,6 +113,12 @@ export const UploadHistory: FC = () => {
               const badgeColor = BADGE_COLOR[history.status];
               const isDeleting = history.id === deleteId;
 
+              let failedResultTxt = 'Processing';
+
+              if (history.status.includes('FAILED')) {
+                failedResultTxt = 'Failed';
+              }
+
               return (
                 <tr key={history.id} className="hover">
                   <td>{no}</td>
@@ -129,7 +135,7 @@ export const UploadHistory: FC = () => {
                   `}
                       onClick={() => download(history.id, history.filename)}
                     >
-                      {hasResult ? 'Download' : 'Processing'}
+                      {hasResult ? 'Download' : failedResultTxt}
                     </button>
                   </td>
                   <td>
