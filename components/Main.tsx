@@ -6,6 +6,9 @@ import useAxiosPrivate from '../hooks/useAxiosPrivate';
 import { Prediction } from '../interfaces';
 import { PreviewModal } from './PreviewModal';
 
+import { useAuth } from '../hooks';
+import { API_BASE_URL } from '../api';
+
 export const BADGE_COLOR: { [key: string]: string } = {
   COMPLETED: 'badge-success',
   PROCESSING: 'badge-warning',
@@ -27,11 +30,15 @@ export const STATUS_MAP: { [key: string]: string } = {
 export const UploadHistory: FC<{
   onOpen: (previewData: string[][], id: string, filename: string) => void;
   download: (id: string, realFilename: string) => void;
-}> = ({ onOpen, download }) => {
+  isActive: boolean;
+}> = ({ onOpen, download, isActive }) => {
   const [data, setData] = useState<Prediction[]>([]);
   const [deleteId, setDeleteId] = useState('');
-  const [isFetching, setIsFetching] = useState(false);
+
   const api = useAxiosPrivate();
+  const {
+    auth: { user },
+  } = useAuth();
 
   const onDelete = async (id: string) => {
     try {
@@ -46,31 +53,44 @@ export const UploadHistory: FC<{
 
   const getData = async () => {
     try {
-      setIsFetching(true);
       const { data } = await api.get('/predictions');
       const histories = data.data;
 
       setData(histories);
     } catch (err) {
     } finally {
-      setIsFetching(false);
     }
   };
 
   useEffect(() => {
+    const es = new EventSource(`${API_BASE_URL}/predictions/stream`, {
+      withCredentials: true,
+    });
+
+    const initEventSource = () => {
+      es.onopen = () => {
+        console.log('Connection opened');
+      };
+
+      es.addEventListener('update', (ev) => {
+        const data = JSON.parse(ev.data);
+        setData(data);
+      });
+
+      es.onerror = (e) => {
+        console.log('Connection closed');
+        es.close();
+      };
+    };
+
+    initEventSource();
     getData();
+
+    return () => es.close();
   }, []);
 
   return (
     <>
-      <div className="flex w-full mb-2">
-        <button
-          className={`btn btn-info ${isFetching ? 'loading' : ''}`}
-          onClick={getData}
-        >
-          Refresh
-        </button>
-      </div>
       <div className="overflow-x-auto w-full">
         <table className="table w-full">
           <thead>
@@ -258,7 +278,11 @@ export const Main: FC = () => {
           )}
 
           {!isUploadActive && (
-            <UploadHistory onOpen={onOpenRow} download={download} />
+            <UploadHistory
+              isActive={!isUploadActive}
+              onOpen={onOpenRow}
+              download={download}
+            />
           )}
         </section>
       </main>
