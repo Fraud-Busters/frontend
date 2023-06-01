@@ -6,4 +6,6 @@ export interface Prediction {
   outKey: string;
   createdAt: string;
   updatedAt: string;
+  previewResult: string[][];
+  errorMsg?: string;
 }

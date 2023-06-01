@@ -4,6 +4,7 @@ import { CSVDataPreview } from './CSVDataPreview';
 import { UploadCSV } from './UploadCSV';
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
 import { Prediction } from '../interfaces';
+import { PreviewModal } from './PreviewModal';
 
 export const BADGE_COLOR: { [key: string]: string } = {
   COMPLETED: 'badge-success',
@@ -23,7 +24,10 @@ export const STATUS_MAP: { [key: string]: string } = {
   UPLOADED: 'Uploaded',
 };
 
-export const UploadHistory: FC = () => {
+export const UploadHistory: FC<{
+  onOpen: (previewData: string[][], id: string, filename: string) => void;
+  download: (id: string, realFilename: string) => void;
+}> = ({ onOpen, download }) => {
   const [data, setData] = useState<Prediction[]>([]);
   const [deleteId, setDeleteId] = useState('');
   const [isFetching, setIsFetching] = useState(false);
@@ -51,24 +55,6 @@ export const UploadHistory: FC = () => {
     } finally {
       setIsFetching(false);
     }
-  };
-
-  const download = async (id: string, realFilename: string) => {
-    const res = await api.get(`/download/${id}`, { responseType: 'blob' });
-    const filename = `result_${realFilename}`;
-
-    const href = window.URL.createObjectURL(res.data);
-
-    // create "a" HTML element with href to file & click
-    const link = document.createElement('a');
-    link.href = href;
-    link.setAttribute('download', filename); //or any other extension
-    document.body.appendChild(link);
-    link.click();
-
-    // clean up "a" element & remove ObjectURL
-    document.body.removeChild(link);
-    URL.revokeObjectURL(href);
   };
 
   useEffect(() => {
@@ -119,29 +105,52 @@ export const UploadHistory: FC = () => {
                 failedResultTxt = 'Failed';
               }
 
+              const err = history.errorMsg;
+
               return (
                 <tr key={history.id} className="hover">
                   <td>{no}</td>
                   <td>{history.filename}</td>
                   <td>{formattedDate}</td>
                   <td>
-                    <span className={`badge ${badgeColor}`}>{status}</span>
+                    <div className={`${err ? 'tooltip' : ''}`} data-tip={err}>
+                      <span className={`badge ${badgeColor}`}>{status}</span>
+                    </div>
                   </td>
-                  <td>
+                  <td className="flex flex-col">
                     <button
                       className={`
                     btn btn-accent
                     ${hasResult ? '' : 'btn-disabled cursor-not-allowed'}
+                    ${err ? 'tooltip' : ''}
                   `}
+                      data-tip={err}
                       onClick={() => download(history.id, history.filename)}
                     >
                       {hasResult ? 'Download' : failedResultTxt}
                     </button>
+
+                    {hasResult && (
+                      <button
+                        className="btn btn-secondary my-2"
+                        onClick={() =>
+                          onOpen(
+                            history.previewResult,
+                            history.id,
+                            history.filename
+                          )
+                        }
+                      >
+                        Preview
+                      </button>
+                    )}
                   </td>
                   <td>
                     <button
                       onClick={() => onDelete(history.id)}
-                      className={`btn btn-error ${isDeleting ? 'loading' : ''}`}
+                      className={`w-full btn btn-error ${
+                        isDeleting ? 'loading' : ''
+                      }`}
                     >
                       Delete
                     </button>
@@ -157,14 +166,67 @@ export const UploadHistory: FC = () => {
 };
 
 export const Main: FC = () => {
+  const api = useAxiosPrivate();
   const [csvData, setCsvData] = useState<string[][]>([]);
   const [isUploadActive, setIsUploadActive] = useState(true);
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvPreviewData, setCsvPreviewData] = useState<string[][]>([]);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [downloadData, setDownloadData] = useState({
+    filename: '',
+    id: '',
+  });
+
+  const onOpenRow = (previewData: string[][], id: string, filename: string) => {
+    setCsvPreviewData(previewData);
+    setDownloadData({
+      filename,
+      id,
+    });
+    setIsPreviewModalOpen(true);
+  };
+
+  const onClose = () => {
+    setIsPreviewModalOpen(false);
+    setCsvPreviewData([]);
+    setDownloadData({
+      filename: '',
+      id: '',
+    });
+  };
+
+  const download = async (id: string, realFilename: string) => {
+    const res = await api.get(`/download/${id}`, { responseType: 'blob' });
+    const filename = `result_${realFilename}`;
+
+    const href = window.URL.createObjectURL(res.data);
+
+    // create "a" HTML element with href to file & click
+    const link = document.createElement('a');
+    link.href = href;
+    link.setAttribute('download', filename); //or any other extension
+    document.body.appendChild(link);
+    link.click();
+
+    // clean up "a" element & remove ObjectURL
+    document.body.removeChild(link);
+    URL.revokeObjectURL(href);
+  };
+
+  const onDownload = async () => {
+    await download(downloadData.id, downloadData.filename);
+  };
 
   return (
     <>
       <Navbar />
       <main className="w-full h-full flex flex-col items-center mt-32 flex-1 sm:px-10 px-5 pb-5">
+        <PreviewModal
+          isOpen={isPreviewModalOpen}
+          onClose={onClose}
+          csvData={csvPreviewData}
+          onDownload={onDownload}
+        />
         <div className="tabs mb-5">
           <a
             className={`
@@ -195,7 +257,9 @@ export const Main: FC = () => {
             </>
           )}
 
-          {!isUploadActive && <UploadHistory />}
+          {!isUploadActive && (
+            <UploadHistory onOpen={onOpenRow} download={download} />
+          )}
         </section>
       </main>
     </>
