@@ -240,7 +240,7 @@ export const Main: FC = () => {
   return (
     <>
       <Navbar />
-      <main className="w-full h-full flex flex-col items-center mt-32 flex-1 sm:px-10 px-5 pb-5">
+      <main className="w-full h-full flex flex-col items-center mt-32 flex-1 px-10 pb-5">
         <PreviewModal
           isOpen={isPreviewModalOpen}
           onClose={onClose}
