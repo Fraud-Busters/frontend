@@ -1,34 +1,64 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Fraud Busters Frontend
+
+This is the frontend application for the Fraud Busters project, built using Next.js, TypeScript, and Tailwind CSS. The purpose of this application is to provide a user interface for fraud detection, where users can upload CSV files to be analyzed by our machine learning model. The analysis results can be downloaded or previewed (showing the first 10 rows). Users can also view the real-time progress or status of the file analysis without the need for manual refresh. Additionally, users have the option to delete prediction results when they are no longer needed.
+
+## Prerequisites
+
+Before running this application, ensure that you have the following prerequisites installed:
+
+- Node.js (minimum version 18)
+- Backend application running
 
 ## Getting Started
 
-First, run the development server:
+To set up and run the Fraud Busters frontend, follow these steps:
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+1. Clone the repository:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+   ```
+   git clone https://github.com/Fraud-Busters/frontend.git
+   ```
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+2. Navigate to the project directory:
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+   ```
+   cd frontend
+   ```
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+3. Install the dependencies:
 
-## Learn More
+   ```
+   npm install
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+4. Set the following environment variable by creating a `.env.local` file in the project root directory:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```
+   NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+   Replace `http://localhost:3000/api/v1` with the actual URL of the backend API.
 
-## Deploy on Vercel
+5. Start the development server:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+   ```
+   npm run dev
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+   The application will be accessible at `http://localhost:3000`.
+
+## Technologies Used
+
+- Next.js: A React framework for building server-side rendered and static web applications.
+- TypeScript: A statically-typed superset of JavaScript that enhances developer productivity.
+- Tailwind CSS: A utility-first CSS framework for rapidly building custom user interfaces.
+
+## Acknowledgments
+
+We would like to acknowledge the following resources and libraries that have been instrumental in the development of this project:
+
+- Next.js: [https://nextjs.org/](https://nextjs.org/)
+- TypeScript: [https://www.typescriptlang.org/](https://www.typescriptlang.org/)
+- Tailwind CSS: [https://tailwindcss.com/](https://tailwindcss.com/)
+
+Feel free to explore the documentation of these technologies for more information and guidance.
