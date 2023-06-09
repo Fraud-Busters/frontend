@@ -56,7 +56,7 @@ export const UploadCSV: FC<{
     formData.append('file', csvFile as Blob);
     setIsUploading(true);
     try {
-      const { data } = await api.post('/upload', formData, {
+      await api.post('/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -69,6 +69,7 @@ export const UploadCSV: FC<{
     } catch (error) {
       if (error instanceof AxiosError) {
         const code = error.response?.status;
+
         if (code === 413) {
           toast.error('File too large');
         } else {
