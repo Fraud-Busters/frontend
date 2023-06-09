@@ -69,7 +69,7 @@ export const UploadCSV: FC<{
     } catch (error) {
       if (error instanceof AxiosError) {
         const code = error.response?.status;
-
+        console.log('CODE: ', code);
         if (code === 413) {
           toast.error('File too large');
         } else {
