@@ -10,6 +10,7 @@ import { useDropzone } from 'react-dropzone';
 import { AiOutlineCloseCircle } from 'react-icons/ai';
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
 import { toast } from 'react-hot-toast';
+import { AxiosError } from 'axios';
 
 export const UploadCSV: FC<{
   setCsvData: Dispatch<SetStateAction<string[][]>>;
@@ -59,25 +60,23 @@ export const UploadCSV: FC<{
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        onUploadProgress: (progressEvent) => {
-          console.log(
-            'Upload Progress: ' +
-              Math.round(
-                (progressEvent.loaded / (progressEvent.total ?? 1)) * 100
-              ) +
-              '%'
-          );
-        },
       });
 
       setCsvFile(null);
       setCsvData([]);
 
-      console.log('DATA: ', data);
       toast.success('File uploaded');
     } catch (error) {
-      console.log(error);
-      toast.error('Failed to upload file');
+      if (error instanceof AxiosError) {
+        const code = error.response?.status;
+        if (code === 413) {
+          toast.error('File too large');
+        } else {
+          toast.error('Failed to upload file');
+        }
+      } else {
+        toast.error('Failed to upload file');
+      }
     } finally {
       setIsUploading(false);
     }
