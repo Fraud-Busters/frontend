@@ -90,6 +90,8 @@ export const UploadCSV: FC<{
         'text/csv': ['.csv'],
       },
       maxFiles: 1,
+      // 32MB
+      maxSize: 32e6,
     });
 
   const borderColor = useMemo(() => {
