@@ -23,21 +23,24 @@ export const UploadCSV: FC<{
     (acceptedFiles: File[]) => {
       // Do something with the files
       const file = acceptedFiles[0];
+      setCsvFile(file);
 
-      const reader = new FileReader();
+      // if size > 10 MB whe dont need to show the preview
+      if (file.size < 1e7) {
+        const reader = new FileReader();
 
-      reader.onload = (e) => {
-        const text = e.target?.result;
-        if (typeof text === 'string') {
-          let rows = text.split('\n');
-          rows = rows.filter((row) => row !== '');
-          const data = rows.map((row) => row.split(','));
-          setCsvData(data);
-          setCsvFile(file);
-        }
-      };
+        reader.onload = (e) => {
+          const text = e.target?.result;
+          if (typeof text === 'string') {
+            let rows = text.split('\n');
+            rows = rows.filter((row) => row !== '');
+            const data = rows.map((row) => row.split(','));
+            setCsvData(data);
+          }
+        };
 
-      reader.readAsText(file);
+        reader.readAsText(file);
+      }
     },
     [setCsvData, setCsvFile]
   );
